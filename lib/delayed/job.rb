@@ -214,7 +214,7 @@ module Delayed
 
     # Moved into its own method so that new_relic can trace it.
     def invoke_job
-      payload_object.perform
+      payload_object.perform if payload_object
     end
 
   private
@@ -227,13 +227,13 @@ module Delayed
           handler_class = $1
         end
         attempt_to_load(handler_class || handler.class)
-        handler = YAML.load(source)
+        handler = YAML.load(source) rescue nil
       end
 
       return handler if handler.respond_to?(:perform)
 
       raise DeserializationError,
-        'Job failed to load: Unknown handler. Try to manually require the appropiate file.'
+        'Job failed to load: Unknown handler. Try to manually require the appropiate file.' if handler
     rescue TypeError, LoadError, NameError => e
       raise DeserializationError,
         "Job failed to load: #{e.message}. Try to manually require the required file."
